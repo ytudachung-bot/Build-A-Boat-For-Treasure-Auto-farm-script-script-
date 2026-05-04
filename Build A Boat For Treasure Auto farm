@@ -1,0 +1,181 @@
+Build A Boat For Treasure Auto farmlocal player = game.Players.LocalPlayer
+local RunService = game:GetService("RunService")
+local character = player.Character or player.CharacterAdded:Wait()
+local root = character:WaitForChild("HumanoidRootPart")
+local humanoid = character:WaitForChild("Humanoid")
+
+
+local startPos = Vector3.new(-50, 45, -488)
+local midPos = Vector3.new(-50, 45, 8500)
+local endPos = Vector3.new(-50, 45, 9486)
+local flySpeed = 420
+local flying = false
+local connection = nil
+local currentTarget = nil
+
+
+local noclipping = false
+local noclipConnection = nil
+
+
+local screenGui = Instance.new("ScreenGui")
+screenGui.ResetOnSpawn = false
+screenGui.Parent = player:WaitForChild("PlayerGui")
+
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 240, 0, 185)
+frame.Position = UDim2.new(0, 20, 0, 20)
+frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+frame.BorderSizePixel = 0
+frame.Active = true
+frame.Draggable = true
+frame.Parent = screenGui
+
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 30)
+title.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
+title.Text = "보물선 만들기 오토팜 스크립트"
+title.TextColor3 = Color3.new(1,1,1)
+title.Font = Enum.Font.GothamBold
+title.TextSize = 14
+title.Parent = frame
+
+local toggleButton = Instance.new("TextButton")
+toggleButton.Size = UDim2.new(0.9, 0, 0, 65)
+toggleButton.Position = UDim2.new(0.05, 0, 0, 45)
+toggleButton.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
+toggleButton.Text = "오토팜 키기"
+toggleButton.TextColor3 = Color3.new(1,1,1)
+toggleButton.Font = Enum.Font.GothamBold
+toggleButton.TextSize = 18
+toggleButton.Parent = frame
+
+local noClipButton = Instance.new("TextButton")
+noClipButton.Size = UDim2.new(0.9, 0, 0, 45)
+noClipButton.Position = UDim2.new(0.05, 0, 0, 118)
+noClipButton.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
+noClipButton.Text = "노클림 키기"
+noClipButton.TextColor3 = Color3.new(1,1,1)
+noClipButton.Font = Enum.Font.GothamBold
+noClipButton.TextSize = 16
+noClipButton.Parent = frame
+
+
+local function updateFlight()
+    if not flying or not currentTarget or not root then return end
+    local targetPos = currentTarget
+    local currentPos = root.Position
+    local direction = (targetPos - currentPos).Unit
+    local velocity = direction * flySpeed
+    root.Velocity = velocity
+    root.AssemblyLinearVelocity = velocity
+    
+    if currentPos.Y < targetPos.Y - 10 then
+        root.Velocity = Vector3.new(velocity.X, 30, velocity.Z)
+    end
+end
+
+local function flyTo(targetPos)
+    currentTarget = targetPos
+    if connection then connection:Disconnect() end
+    connection = RunService.Heartbeat:Connect(updateFlight)
+end
+
+local function stopFlying()
+    currentTarget = nil
+    if connection then
+        connection:Disconnect()
+        connection = nil
+    end
+    if root then
+        root.Velocity = Vector3.new(0,0,0)
+        root.AssemblyLinearVelocity = Vector3.new(0,0,0)
+    end
+    if humanoid then
+        humanoid.PlatformStand = false
+    end
+end
+
+
+local function toggleNoClip()
+    noclipping = not noclipping
+    if noclipping then
+        noClipButton.Text = "노클립 끄기"
+        noClipButton.BackgroundColor3 = Color3.fromRGB(170, 0, 0)
+        if noclipConnection then noclipConnection:Disconnect() end
+        noclipConnection = RunService.Stepped:Connect(function()
+            if character and character.Parent then
+                for _, v in pairs(character:GetDescendants()) do
+                    if v:IsA("BasePart") then
+                        v.CanCollide = false
+                    end
+                end
+            end
+        end)
+    else
+        noClipButton.Text = "노클립 키기"
+        noClipButton.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
+        if noclipConnection then
+            noclipConnection:Disconnect()
+            noclipConnection = nil
+        end
+        if character and character.Parent then
+            for _, v in pairs(character:GetDescendants()) do
+                if v:IsA("BasePart") then
+                    v.CanCollide = true
+                end
+            end
+        end
+    end
+end
+
+local function startLoop()
+    spawn(function()
+        while flying do
+            character = player.Character or player.CharacterAdded:Wait()
+            root = character:WaitForChild("HumanoidRootPart")
+            humanoid = character:WaitForChild("Humanoid")
+            humanoid.PlatformStand = true
+            
+
+            root.CFrame = CFrame.new(startPos)
+            wait(0.1)
+            if not flying then break end
+            
+
+            flyTo(midPos)
+            wait(20)
+            if not flying then break end
+            
+
+            flyTo(endPos)
+            wait(4)
+            if not flying then break end
+            
+            print("플라이 18초 해제 함")
+
+            stopFlying()
+            wait(18)
+            
+            print("15초 후 재시작")
+        end
+    end)
+end
+
+
+toggleButton.MouseButton1Click:Connect(function()
+    flying = not flying
+    if flying then
+        toggleButton.Text = "오토팜 끄기"
+        toggleButton.BackgroundColor3 = Color3.fromRGB(170, 0, 0)
+        startLoop()
+    else
+        toggleButton.Text = "오토팜 키기"
+        toggleButton.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
+        stopFlying()
+    end
+end)
+
+noClipButton.MouseButton1Click:Connect(toggleNoClip)
+
+print("로드 완료됌 실행 ㄱㄱ하삼")
