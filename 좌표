@@ -1,0 +1,67 @@
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local CoreGui = game:GetService("CoreGui")
+
+local player = Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+
+local coordsGui = Instance.new("ScreenGui")
+coordsGui.Name = "CurrentCoordinates"
+coordsGui.ResetOnSpawn = false
+coordsGui.Parent = CoreGui
+
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 280, 0, 110)
+frame.Position = UDim2.new(0, 10, 0, 10)
+frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+frame.BackgroundTransparency = 0.4
+frame.BorderSizePixel = 0
+frame.Parent = coordsGui
+
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 8)
+corner.Parent = frame
+
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 30)
+title.BackgroundTransparency = 1
+title.Text = "현재 좌표"
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.TextScaled = true
+title.Font = Enum.Font.GothamBold
+title.Parent = frame
+
+local coordsText = Instance.new("TextLabel")
+coordsText.Size = UDim2.new(1, 0, 0, 70)
+coordsText.Position = UDim2.new(0, 0, 0, 35)
+coordsText.BackgroundTransparency = 1
+coordsText.TextColor3 = Color3.fromRGB(0, 255, 200)
+coordsText.TextScaled = true
+coordsText.Font = Enum.Font.Gotham
+coordsText.Text = "X: 0.00\nY: 0.00\nZ: 0.00"
+coordsText.Parent = frame
+
+local connection
+
+local function updateCoordinates()
+    if character and character:FindFirstChild("HumanoidRootPart") then
+        local root = character.HumanoidRootPart
+        local pos = root.Position
+        coordsText.Text = string.format(
+            "X: %.2f\nY: %.2f\nZ: %.2f",
+            pos.X, pos.Y, pos.Z
+        )
+    end
+end
+
+connection = RunService.RenderStepped:Connect(updateCoordinates)
+
+player.CharacterAdded:Connect(function(newChar)
+    character = newChar
+end)
+
+-- 종료하고 싶을 때 실행할 명령어
+getgenv().HideCoords = function()
+    if connection then connection:Disconnect() end
+    if coordsGui then coordsGui:Destroy() end
+end
